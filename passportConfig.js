@@ -3,15 +3,15 @@ const {Client} = require("pg");
 const bcr = require("bcrypt");
 
 var client= new Client({database:"mds",
-        user:"alexm1126",
-        password:"alex",
+        user:"gabirelul",
+        password:"alexgab",
         host:"localhost",
         port:5432});
 client.connect();
 
 const authUser = function(email, parola, done){
     client.query(
-        `SELECT * FROM utilizatori where email = $1`, [email], function(queryErr, queryRes){
+        `SELECT * FROM utilizator where email = $1`, [email], function(queryErr, queryRes){
             if(queryErr){
                 throw queryErr;
             }else{
@@ -47,7 +47,7 @@ function initializare(passport){
     });
     passport.deserializeUser(function(id, done){
         client.query(
-            `SELECT * FROM utilizatori WHERE id=$1`, [id], function(queryErrId, queryResId){
+            `SELECT * FROM utilizator WHERE id=$1`, [id], function(queryErrId, queryResId){
                 if(queryErrId){
                     throw queryErrId;
                 }else{

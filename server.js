@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const sequelize = require("./db");
 const { Client } = require("pg");
 const bcr = require("bcrypt");
 const session = require("express-session");
@@ -29,7 +30,7 @@ var client = new Client({
 });
 client.connect();
 
-const PORT = process.env.PORT || 32767;
+const PORT = process.env.PORT || 3000;
 
 client.query(
   "select * from unnest(enum_range(null::brands))",
@@ -61,10 +62,19 @@ client.query("select min(km), max(km) from masina", function (err, rezKm) {
   }
 });
 
+sequelize
+  .sync({ force: false })
+  .then(() => {
+    console.log("Database & tables created!");
+  })
+  .catch((error) => {
+    console.error("Failed to sync database:", error);
+  });
+
 app.set("view engine", "ejs");
 
 //app.use("/static", express.static(__dirname + "/static"));
-app.use('/static', express.static(path.join(__dirname, 'static')));
+app.use("/static", express.static(path.join(__dirname, "static")));
 
 app.use("/masini", function (req, res, next) {
   res.locals.branduri = globalObj.brands;
@@ -226,7 +236,7 @@ app.get("/admin/home", isNotAuth, function (req, res) {
           console.log(errMasina);
         }
         client.query(
-          `SELECT m.id_masina, m.brand, m.model, m.vin, r.data, u.email FROM masina m JOIN rezervare r on (m.id_masina=r.masina_id) JOIN utilizatori u on (u.id = r.user_id)`,
+          `SELECT m.id_masina, m.brand, m.model, m.vin, r.data, u.email FROM masina m JOIN rezervare r on (m.id_masina=r.masina_id) JOIN utilizator u on (u.id = r.user_id)`,
           function (errRez, queryRez) {
             if (errRez) {
               console.log(errRez);
@@ -287,7 +297,7 @@ app.post("/utilizator/signup", async function (req, res) {
   } else {
     let hashPass = await bcr.hash(parola, 10); //cripteaza parola cu 10 runde de criptare in algoritm
     client.query(
-      `SELECT * FROM utilizatori WHERE email = $1`,
+      `SELECT * FROM utilizator WHERE email = $1`,
       [email],
       function (queryErr, queryRez) {
         if (queryErr) {
@@ -302,7 +312,7 @@ app.post("/utilizator/signup", async function (req, res) {
           res.render("pages/signup", { err });
         } else {
           client.query(
-            `INSERT INTO utilizatori (nume, prenume, email, parola, telefon, adresa) values($1, $2, $3, $4, $5, $6) RETURNING id, parola`,
+            `INSERT INTO utilizator (nume, prenume, email, parola, telefon, adresa) values($1, $2, $3, $4, $5, $6) RETURNING id, parola`,
             [nume, prenume, email, hashPass, tel, addr],
             function (queryErrIns, queryResIns) {
               if (queryErrIns) {
